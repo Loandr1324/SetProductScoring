@@ -58,4 +58,4 @@ DAYS_INTERVAL: int = 'количество дней от текуще даты, 
 
 ------------
 Для логирования используется библиотека [logguru](https://loguru.readthedocs.io/en/stable/overview.html)
-Наименование лог файла прописывается в файле config.py в переменную `FILE_NAME_CONFIG`
+Наименование лог файла прописывается в файле config.py в переменную `FILE_NAME_LOG`
