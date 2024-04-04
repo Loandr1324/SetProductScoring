@@ -107,8 +107,8 @@ class WorkGoogle:
     def get_products(self) -> list[dict]:
         """
         Получаем вторую строку с первой страницы и возвращаем их в словаре с предварительно заданными ключами
-        :return: dict
-            ключи словаря [
+        :return: list[dict
+            ключи словаря {
             "number" - Код детали,
             "brand" - Имя производителя
             "description" - description
@@ -120,7 +120,7 @@ class WorkGoogle:
             "rule" - Правило выбора цены
             "select_flag" - Отбор для получения цены
             "id_rule" - ID правила для получения цены
-            ]
+            },...]
         """
         sheet_products = self._rw_google.read_sheet(0)
         params_head = ['number', 'brand', 'description', 'stock', 'price', 'updated_date', 'turn_ratio',
