@@ -144,18 +144,20 @@ class WorkGoogle:
         sheet_rule = self._rw_google.read_sheet(1)
         return {'count_products': int(sheet_rule[1][2]), 'days_interval': int(sheet_rule[2][2])}
 
-    def set_selected_products(self, filtered_products: list[dict], count_row: int) -> None:
+    def set_selected_products(self, filtered_products: list[dict], count_row: int or str, name_column: str) -> None:
         """
         Записываем информацию о выборе позиции для последующего получения цены
         :param filtered_products: Список словарей.
         Обязательный ключ [{'row_product_on_sheet': номер строки int or str}]
         :param count_row: Общее количество строк с данными таблицы без заголовка
+        :param name_column: Сочетание Букв колонки excel 'A' или 'B' или 'AA' или 'BB' и т.п.
         :return:
         """
         values = []
         row_selected = [str(product['row_product_on_sheet']) for product in filtered_products]
         values.extend(
-            {'range': f"J{i}", 'values': [[1 if str(i) in row_selected else ""]]} for i in range(2, count_row + 2))
+            {'range': f"{name_column}{i}", 'values': [[1 if str(i) in row_selected else ""]]}
+            for i in range(2, count_row + 2))
 
         self._rw_google.save_batch(0, values)
 
