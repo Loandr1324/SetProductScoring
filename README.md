@@ -30,8 +30,6 @@ AUTH_GOOGLE: dict = {
     'KEY_WORKBOOK': 'id вашей google таблицы'
 }
 FILE_NAME_LOG: str = 'имя вашего лог файла'
-COUNT_PRODUCTS: int = 'количество продуктов для отбора'
-DAYS_INTERVAL: int = 'количество дней от текущей даты, чтобы считать цену устаревшей'
 ```
 Так же в папке проекта [services/google_table](services/google_table) необходимо расположить файл 
 `credentials.json` с параметрами подключения к Google таблице
