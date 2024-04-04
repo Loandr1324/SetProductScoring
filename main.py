@@ -1,5 +1,5 @@
 # Author Loik Andrey mail: loikand@mail.ru
-from config import FILE_NAME_LOG, COUNT_PRODUCTS, DAYS_INTERVAL
+from config import FILE_NAME_LOG
 from google_table.google_tb_work import WorkGoogle
 from datetime import datetime as dt
 from loguru import logger
@@ -12,21 +12,23 @@ logger.add(FILE_NAME_LOG,
            compression="zip")
 
 
-def filtered(products: list[dict]) -> list[dict]:
+def filtered(products: list[dict], count_products: int, days_interval: int) -> list[dict]:
     """
     Выбираем строки согласно правилам по ТЗ:
     1. Если нет цены, то неважны дальнейшие поля. Берём эту позицию в проценку.
-    После того как выбрали все без цены и не набрали COUNT_PRODUCTS позиций, то начинаем работать по второму приоритету.
-    Если на первом шаге набираем больше COUNT_PRODUCTS, то выбираем с наибольшей оборачиваемостью,
-    но не больше COUNT_PRODUCTS.
+    После того как выбрали все без цены и не набрали count_products позиций, то начинаем работать по второму приоритету.
+    Если на первом шаге набираем больше count_products, то выбираем с наибольшей оборачиваемостью,
+    но не больше count_products.
     2. Если цена есть и срок проценки больше заданной, то берём все эти позиции.
-    Если не набрали COUNT_PRODUCTS, то переходим к третьему приоритету.
-    Если на первом шаге набираем больше чем не хватает до COUNT_PRODUCTS,
-    то выбираем с наибольшей оборачиваемостью количество, которого не хватает до COUNT_PRODUCTS.
+    Если не набрали count_products, то переходим к третьему приоритету.
+    Если на первом шаге набираем больше чем не хватает до count_products,
+    то выбираем с наибольшей оборачиваемостью количество, которого не хватает до count_products.
     3. Если цена есть, срок находится в допустимом интервале, то выбираем позиции по оборачиваемости.
-    Берём позиции с большей оборачиваемостью и идём по убыванию, пока не наберём COUNT_PRODUCTS,
+    Берём позиции с большей оборачиваемостью и идём по убыванию, пока не наберём count_products,
     или пока не закончатся позиции.
 
+    :param count_products: Количество продуктов для отбора
+    :param days_interval: Количество дней от текущей даты, чтобы считать цену устаревшей
     :param products: list[dict
             ключи словаря {
             "number" - Код детали,
@@ -45,21 +47,21 @@ def filtered(products: list[dict]) -> list[dict]:
     """
     logger.info(f"Общее количество позиций для фильтрации: {len(products)}")
     filtered_products = sorted([product for product in products if not product['price']],
-                               key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:COUNT_PRODUCTS]
+                               key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:count_products]
     logger.info(f"Первый этап. Количество отобранных позиций без цены: {len(filtered_products)}")
 
     unfiltered_products = [product for product in products if product not in filtered_products]
     logger.info(f"Количество не отфильтрованных позиций: {len(unfiltered_products)}")
 
     # Добавляем позиции с ценой, если позиций не достаточно
-    val_count = COUNT_PRODUCTS - len(filtered_products)
+    val_count = count_products - len(filtered_products)
     if val_count > 0:
         logger.info("Добавляем позиции с ценой")
         filter_by_date = [product for product in unfiltered_products if product['price']]
 
         logger.info(f"Количество позиций с ценой: {len(filter_by_date)}")
         filter_by_date = sorted(
-            [product for product in filter_by_date if (dt.now() - product['updated_date']).days > DAYS_INTERVAL],
+            [product for product in filter_by_date if (dt.now() - product['updated_date']).days > days_interval],
             key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:val_count]
         logger.info(f"Второй этап. Количество отобранных позиций с ценой: {len(filter_by_date)}")
 
@@ -70,7 +72,7 @@ def filtered(products: list[dict]) -> list[dict]:
         logger.info(f"Количество не отфильтрованных позиций: {len(unfiltered_products)}")
 
     # Добавляем позиции из всего списка по оборачиваемости, если позиций не достаточно
-    val_count = COUNT_PRODUCTS - len(filtered_products)
+    val_count = count_products - len(filtered_products)
     if val_count > 0:
         logger.info("Добавляем позиции по оборачиваемости")
         filter_by_turn_ratio = sorted([product for product in unfiltered_products],
@@ -95,8 +97,11 @@ def main() -> None:
     products = wk_g.get_products()
     count_row = len(products)
 
+    # Получаем правила фильтрации
+    rules = wk_g.get_rule_for_selected_products()
+
     # Фильтруем данные
-    products = filtered(products)
+    products = filtered(products, rules['count_products'], rules['days_interval'])
 
     # Записываем в Google таблице данные по выбранным позициям
     wk_g.set_selected_products(products, count_row)
