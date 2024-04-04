@@ -109,17 +109,17 @@ class WorkGoogle:
         Получаем вторую строку с первой страницы и возвращаем их в словаре с предварительно заданными ключами
         :return: list[dict
             ключи словаря {
-            "number" - Код детали,
-            "brand" - Имя производителя
-            "description" - description
-            "stock" - Наличие
-            "price" - Цена
-            "updated_date" - Дата последнего получения цены
-            "turn_ratio" - Коэффициент оборачиваемости
-            "norm_stock" - Норма наличия
-            "rule" - Правило выбора цены
-            "select_flag" - Отбор для получения цены
-            "id_rule" - ID правила для получения цены
+            'number' - Код детали,
+            'brand' - Имя производителя
+            'description' - description
+            'stock' - Наличие
+            'price' - Цена
+            'updated_date' - Дата последнего получения цены
+            'turn_ratio' - Коэффициент оборачиваемости
+            'norm_stock' - Норма наличия
+            'rule' - Правило выбора цены
+            'select_flag' - Отбор для получения цены
+            'id_rule' - ID правила для получения цены
             },...]
         """
         sheet_products = self._rw_google.read_sheet(0)
@@ -132,6 +132,17 @@ class WorkGoogle:
             product['row_product_on_sheet'] = i
             products.append(product)
         return products
+
+    def get_rule_for_selected_products(self) -> dict:
+        """
+        Получаем правила выбора позиций продукта со второй страницы Google таблицы
+        :return: ключи словаря {
+            'count_products' - Количество продуктов для отбора,
+            'days_interval' - Количество дней от текущей даты, чтобы считать цену устаревшей
+            }
+        """
+        sheet_rule = self._rw_google.read_sheet(1)
+        return {'count_products': int(sheet_rule[1][2]), 'days_interval': int(sheet_rule[2][2])}
 
     def set_selected_products(self, filtered_products: list[dict], count_row: int) -> None:
         """
