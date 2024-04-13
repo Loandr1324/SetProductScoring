@@ -46,7 +46,8 @@ def filtered(products: list[dict], count_products: int, days_interval: int) -> l
     :return: list[dict] с теми же ключами, что и products
     """
     logger.info(f"Общее количество позиций для фильтрации: {len(products)}")
-    filtered_products = sorted([product for product in products if not product['price']],
+    filtered_products = sorted([product for product in products
+                                if not product['price'] and (dt.now() - product['updated_date']).days > days_interval],
                                key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:count_products]
     logger.info(f"Первый этап. Количество отобранных позиций без цены: {len(filtered_products)}")
 
