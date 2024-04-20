@@ -105,7 +105,7 @@ def main() -> None:
     products = filtered(products, rules['count_products'], rules['days_interval'])
 
     # Записываем в Google таблице данные по выбранным позициям
-    wk_g.set_selected_products(products, count_row, 'J')
+    wk_g.set_selected_products(products, count_row, 'K')
 
     logger.info(f"... Окончание работы программы")
 
