@@ -129,6 +129,7 @@ class WorkGoogle:
         products = []
         for i, val in enumerate(sheet_products[1:], start=2):
             product = dict(zip(params_head, val))
+            product['turn_ratio'] = self.convert_turn_ratio(str(product['turn_ratio']))
             product['updated_date'] = self.convert_date(str(product['updated_date']))
             product['row_product_on_sheet'] = i
             products.append(product)
@@ -171,3 +172,12 @@ class WorkGoogle:
         """
         return dt.strptime(date, '%d.%m.%Y') if date \
             else dt.strptime('01.01.2024', '%d.%m.%Y')
+
+    @staticmethod
+    def convert_turn_ratio(turn_ratio: str) -> str:
+        """
+        Преобразуем коэффициент оборачиваемости в необходимый формат
+        :param turn_ratio: Строка с датой в формате 'k00'
+        :return: трока с датой в формате '00'
+        """
+        return turn_ratio[1:]
