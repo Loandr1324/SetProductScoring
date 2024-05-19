@@ -12,24 +12,25 @@ logger.add(FILE_NAME_LOG,
            compression="zip")
 
 
-def filtered(products: list[dict], count_products: int, days_interval: int) -> list[dict]:
+def filtered(products: list[dict], count_products: int, days_interval: dict) -> list[dict]:
     """
     Выбираем строки согласно правилам по ТЗ:
     1. Если "rule" установлено 0, то позиции не берём для проценки.
-    2. Если нет цены и интервал проценки не прошёл, то неважны дальнейшие поля. Берём эту позицию в проценку.
+    2. Фильтруем позиции по коэффициенту оборачиваемости начиная с самого высокого к10.
+    Если при последующих фильтрациях по цене и дате позиций отобрано не достаточно,
+    то переходим к следующему коэффициенту оборачиваемости,
+    пока не наберём необходимое количество позиций count_products.
+    2.1. Если нет цены и дата проценки больше заданного интервала, то неважны дальнейшие поля,
+    берём эти позиции в проценку.
     После того как выбрали все без цены и не набрали count_products позиций, то начинаем работать по второму приоритету.
-    Если на первом шаге набираем больше count_products, то выбираем с наибольшей оборачиваемостью,
-    но не больше count_products.
-    3. Если цена есть и срок проценки больше заданной, то берём все эти позиции.
-    Если не набрали count_products, то переходим к третьему приоритету.
-    Если на первом шаге набираем больше чем не хватает до count_products,
-    то выбираем с наибольшей оборачиваемостью количество, которого не хватает до count_products.
-    4. Если цена есть, срок находится в допустимом интервале, то выбираем позиции по оборачиваемости.
-    Берём позиции с большей оборачиваемостью и идём по убыванию, пока не наберём count_products,
-    или пока не закончатся позиции.
+    Если набрали количество больше, то берём первые count_products элементов.
+    2.2. Если цена есть и дата проценки больше заданного интервала, то берём все эти позиции.
+    Если не набрали count_products, то переходим к позициям со следующим коэффициентом оборачиваемости.
 
     :param count_products: Количество продуктов для отбора
-    :param days_interval: Количество дней от текущей даты, чтобы считать цену устаревшей
+    :param days_interval: dict{
+        Коэффициент оборачиваемости: Количество дней от текущей даты, чтобы считать проценку устаревшей
+        }
     :param products: list[dict
             ключи словаря {
             "number" - Код детали,
@@ -47,46 +48,57 @@ def filtered(products: list[dict], count_products: int, days_interval: int) -> l
     :return: list[dict] с теми же ключами, что и products
     """
     logger.info(f"Общее количество позиций для фильтрации: {len(products)}")
+
+    # Фильтруем позиции по правилу
     products = [product for product in products if product['rule'] != '0']
     logger.info(f"Первый этап. Количество отобранных позиций разрешённых для проценки: {len(products)}")
 
-    filtered_products = sorted([product for product in products
-                                if not product['price'] and (dt.now() - product['updated_date']).days > days_interval],
-                               key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:count_products]
-    logger.info(f"Второй этап. Количество отобранных позиций без цены: {len(filtered_products)}")
+    filtered_products = []
+    val_count = count_products
+    logger.info(f"Начинаем фильтрацию по коэффициентам оборачиваемости")
+    for key in sorted(days_interval.keys(), reverse=True):
+        filtered_by_turn_ratio = [product for product in products if int(product['turn_ratio']) == key]
+        logger.info(f"Количество отобранных позиций до фильтрации "
+                    f"по коэффициенту оборачиваемости к{key}: {len(filtered_by_turn_ratio)}")
 
-    unfiltered_products = [product for product in products if product not in filtered_products]
-    logger.info(f"Количество не отфильтрованных позиций: {len(unfiltered_products)}")
-
-    # Добавляем позиции с ценой, если позиций не достаточно
-    val_count = count_products - len(filtered_products)
-    if val_count > 0:
-        logger.info("Добавляем позиции с ценой")
-        filter_by_date = [product for product in unfiltered_products if product['price']]
-
-        logger.info(f"Количество позиций с ценой: {len(filter_by_date)}")
-        filter_by_date = sorted(
-            [product for product in filter_by_date if (dt.now() - product['updated_date']).days > days_interval],
-            key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:val_count]
-        logger.info(f"Третий этап. Количество отобранных позиций с ценой: {len(filter_by_date)}")
-
-        filtered_products += filter_by_date
-        logger.info(f"Количество элементов без цены и с ценой {len(filtered_products)}")
-
-        unfiltered_products = [product for product in unfiltered_products if product not in filter_by_date]
+        # Фильтруем позиции без цены
+        filtered_by_price = \
+            [product for product in filtered_by_turn_ratio if not product['price']
+             and (dt.now() - product['updated_date']).days > int(days_interval[key])][:val_count]
+        logger.info(f"Количество отобранных позиций без цены "
+                    f"по коэффициенту оборачиваемости к{key}: {len(filtered_by_price)}")
+        unfiltered_products = [product for product in filtered_by_turn_ratio if product not in filtered_by_price]
         logger.info(f"Количество не отфильтрованных позиций: {len(unfiltered_products)}")
 
-    # Добавляем позиции из всего списка по оборачиваемости, если позиций не достаточно
-    val_count = count_products - len(filtered_products)
-    if val_count > 0:
-        logger.info("Добавляем позиции по оборачиваемости")
-        filter_by_turn_ratio = sorted([product for product in unfiltered_products],
-                                      key=lambda x: float(x['turn_ratio'] or 0), reverse=True)[:val_count]
-        logger.info(f"Четвёртый этап. Количество отобранных позиций по оборачиваемости: {len(filter_by_turn_ratio)}")
-        unfiltered_products = [product for product in unfiltered_products if product not in filter_by_turn_ratio]
-        logger.info(f"Количество не отфильтрованных позиций: {len(unfiltered_products)}")
+        # Обновляем список отфильтрованных позиций
+        filtered_products += filtered_by_price
+        val_count -= len(filtered_by_price)
+        logger.info(f"Осталось добавить {val_count} позиций")
 
-    logger.info(f"Итоговое количество отобранных позиций: {len(filtered_products)}")
+        # Добавляем позиции с ценой, если позиций не достаточно
+        if val_count > 0:
+            logger.info("Добавляем позиции с ценой")
+            # Фильтруем позиции с ценой
+            filter_by_date = [product for product in unfiltered_products if product['price']
+                              and (dt.now() - product['updated_date']).days > days_interval[key]][:val_count]
+
+            logger.info(f"Количество отобранных позиций с ценой "
+                        f"по коэффициенту оборачиваемости к{key}: {len(filter_by_date)}")
+
+            filtered_products += filter_by_date
+            logger.info(f"Количество элементов без цены и с ценой "
+                        f"по коэффициенту оборачиваемости к{key}: {len(filtered_products)}")
+
+            unfiltered_products = [product for product in unfiltered_products if product not in filter_by_date]
+            logger.info(f"Количество не отфильтрованных позиций: {len(unfiltered_products)}")
+            val_count -= len(filter_by_date)
+            logger.info(f"Осталось добавить {val_count} позиций")
+        logger.info(f"Итого отобрано позиций с учётом коэффициента оборачиваемости к{key}: {len(filtered_products)}")
+
+        # Завершаем цикл, если набрали необходимое количество позиций
+        if val_count <= 0:
+            break
+
     return filtered_products
 
 
