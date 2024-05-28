@@ -146,17 +146,18 @@ class WorkGoogle:
         sheet_rule = self._rw_google.read_sheet(1)
         return {'count_products': int(sheet_rule[1][2]),
                 'days_interval': {
-                    10: int(sheet_rule[3][2]),
-                    9: int(sheet_rule[3][3]),
-                    8: int(sheet_rule[3][4]),
-                    7: int(sheet_rule[3][5]),
-                    6: int(sheet_rule[3][6]),
-                    5: int(sheet_rule[3][7]),
-                    4: int(sheet_rule[3][8]),
-                    3: int(sheet_rule[3][9]),
-                    2: int(sheet_rule[3][10]),
-                    1: int(sheet_rule[3][11]),
-                    0: int(sheet_rule[3][12])
+                    11: int(sheet_rule[3][2]),
+                    10: int(sheet_rule[3][3]),
+                    9: int(sheet_rule[3][4]),
+                    8: int(sheet_rule[3][5]),
+                    7: int(sheet_rule[3][6]),
+                    6: int(sheet_rule[3][7]),
+                    5: int(sheet_rule[3][8]),
+                    4: int(sheet_rule[3][9]),
+                    3: int(sheet_rule[3][10]),
+                    2: int(sheet_rule[3][11]),
+                    1: int(sheet_rule[3][12]),
+                    0: int(sheet_rule[3][13])
                 }}
 
     def set_selected_products(self, filtered_products: list[dict], count_row: int or str, name_column: str) -> None:
