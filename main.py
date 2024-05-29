@@ -12,6 +12,25 @@ logger.add(FILE_NAME_LOG,
            compression="zip")
 
 
+def remove_duplicate(data: list[dict]) -> list[dict]:
+    """
+    Удаляем дубли элементов списка у которых одинаковые значения ключей 'number' и 'brand'
+
+    :param data: Список словарей в которых обязательно должны быть ключи 'number' и 'brand'
+    :return: Список словарей без дубликатов по ключам словаря
+    """
+    # Используем множество для отслеживания уникальных комбинаций 'number' и 'brand'
+    unique_keys = set()
+    unique_data = []
+
+    for item in data:
+        key = (item['number'], item['brand'])
+        if key not in unique_keys:
+            unique_keys.add(key)
+            unique_data.append(item)
+    return unique_data
+
+
 def filtered(products: list[dict], count_products: int, days_interval: dict) -> list[dict]:
     """
     Выбираем строки согласно правилам по ТЗ:
@@ -51,7 +70,11 @@ def filtered(products: list[dict], count_products: int, days_interval: dict) -> 
 
     # Фильтруем позиции по правилу
     products = [product for product in products if product['rule'] != '0']
-    logger.info(f"Первый этап. Количество отобранных позиций разрешённых для проценки: {len(products)}")
+    logger.info(f"Количество отобранных позиций разрешённых для проценки: {len(products)}")
+
+    # Удаляем дубли позиций
+    products = remove_duplicate(products)
+    logger.info(f"Количество отобранных позиций для проценки после удаления дублей: {len(products)}")
 
     filtered_products = []
     val_count = count_products
