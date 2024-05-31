@@ -112,7 +112,7 @@ class WorkGoogle:
             'number' - Код детали,
             'alias_number' - псевдоним кода детали,
             'brand' - Имя производителя
-            'alias_brand' - псевдоним кода детали,
+            'alias_brand' - псевдоним производителя детали,
             'description' - description
             'stock' - Наличие
             'price' - Цена
