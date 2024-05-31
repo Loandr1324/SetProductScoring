@@ -110,8 +110,9 @@ class WorkGoogle:
         :return: list[dict
             ключи словаря {
             'number' - Код детали,
-            'alias' - псевдоним кода детали,
+            'alias_number' - псевдоним кода детали,
             'brand' - Имя производителя
+            'alias_brand' - псевдоним кода детали,
             'description' - description
             'stock' - Наличие
             'price' - Цена
